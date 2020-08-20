@@ -1,0 +1,158 @@
+
+<html>
+    <head>
+        <meta charset="utf-8">
+		<!-- <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"> -->
+
+        <style>
+		#info {
+			position	: absolute;
+			top		: 0px;
+			width		: 100%;
+			padding		: 5px;
+			text-align	: center;
+		}
+		#info a {
+			color		: #66F;
+			text-decoration	: none;
+		}
+		#info a:hover {
+			text-decoration	: underline;
+		}
+        #container {
+            width		: 90%;
+            height		: 90%;
+            overflow	: hidden;
+            padding		: 0;
+            margin		: 0;
+            -webkit-user-select	: none;
+            -moz-user-select	: none;
+        }
+        </style>
+    </head>
+
+    <body>
+        <!-- VirtualJoystick -->
+		<div id="container"></div>
+		<div id="info">
+            <span id="result"></span>
+
+            <!-- Remote Cam Video -->
+            <h3>Hello Stream</h3>
+            <img id="bg" src="/video_feed">
+
+            
+            <div id="demo">
+            Test send Commands.
+            </div>
+            <!--
+            <button type="button" onclick="getSendCmd('move', 'forward')">GET / Forward</button>
+            <button type="button" onclick="getSendCmd('move', 'backward')">GET / Backward</button>
+            <button type="button" onclick="getSendCmd('move', 'turn_left')">GET / TurnLeft</button>
+            <button type="button" onclick="getSendCmd('move', 'turn_right')">GET / TrunRight</button>
+            <br>
+            <button type="button" onclick="getSendCmd('stop', 'none')">GET / STOP</button>
+            <br>
+            <button type="button" onclick="postSendCmd('move', 'forward')">POST / Forward</button>
+            <button type="button" onclick="postSendCmd('move', 'backward')">POST / Backward</button>
+            <button type="button" onclick="postSendCmd('move', 'turn_left')">POST / TurnLeft</button>
+            <button type="button" onclick="postSendCmd('move', 'turn_right')">POST / TrunRight</button>
+            -->
+            <!-- Remote Cam Video -->
+
+		</div> 
+		<script src="/static/virtualjoystick.js"></script>
+		<script>
+			console.log("touchscreen is", VirtualJoystick.touchScreenAvailable() ? "available" : "not available");
+	
+			var joystick	= new VirtualJoystick({
+				container	: document.getElementById('container'),
+				mouseSupport	: true,
+			});
+			joystick.addEventListener('touchStart', function(){
+				console.log('down')
+			})
+			joystick.addEventListener('touchEnd', function(){
+				console.log('up')
+			})
+
+			setInterval(function(){
+				var outputEl	= document.getElementById('result');
+				var vec_x, vec_y, m1, m2;
+				vec_x = Math.round(joystick.deltaX()/10);
+				vec_y = Math.round(joystick.deltaY()/10);
+				m1 = vec_x + vec_y;
+				m2 = -vec_x + vec_y;
+				if (m1 > 10)
+					m1 = 10;
+				if (m1 < -10)
+					m1 = -10;
+				if (m2 > 10)
+					m2 = 10;
+				if (m2 < -10)
+					m2 = -10;
+                //if (m1 != 0 && m2 != 0)
+                    getSendCmd('motor_ctrl', m1, m2)
+				outputEl.innerHTML	= ' dx:'+joystick.deltaX()
+					+ ' dy:'+joystick.deltaY()
+					+ '<br>motor 1: '+m1
+					+ ', motor 2: '+m2
+                    /*
+					+ '<br>' + (joystick.right()	? ' right'	: '')
+					+ (joystick.up()	? ' up'		: '')
+					+ (joystick.left()	? ' left'	: '')
+					+ (joystick.down()	? ' down' 	: '')
+                    */
+			}, 1/4 * 1000);
+		</script>
+        <!-- VirtualJoystick -->
+
+        <script>
+        function getSendCmd(cmd, param_1, param_2) {
+          var xhttp = new XMLHttpRequest();
+          var url = "/ajax_api";
+          url = url + "?cmd=" + cmd + "&param_1=" + param_1 + "&param_2=" + param_2;
+          xhttp.onreadystatechange = refreshPage;
+          xhttp.open("GET", url, true);
+          xhttp.send();
+        }
+        
+        function postSendCmd(cmd, param_1) {
+          var xhttp = new XMLHttpRequest();
+          var params = 'cmd='+cmd+'&param_1='+param_1;
+          const csrftoken = getCookie('csrftoken');
+
+          xhttp.onreadystatechange = refreshPage;
+
+          xhttp.open("POST", "/ajax_api", true);
+          xhttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');//for post user_id
+          xhttp.setRequestHeader("X-CSRFToken", csrftoken);
+          xhttp.send(params);
+        }
+
+        function refreshPage() {
+          if (this.readyState == 4 && this.status == 200) {
+            document.getElementById("demo").innerHTML = "[Result from server]<br>" + this.responseText;
+          }
+        };
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        </script>
+
+    </body>
+</html>
